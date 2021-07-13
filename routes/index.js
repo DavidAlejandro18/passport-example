@@ -1,48 +1,18 @@
-const LocalStrategy = require('passport-local').Strategy;
+const { Router } = require('express');
+const { loggingIn, logout, renderLogin, renderDashboard } = require('../controllers/auth.controller');
+const router = Router();
+const { validarDashboard, validarLogin } = require('../middlewares');
 
-module.exports = (app, passport) => {
+router.get('/dashboard', [
+    validarDashboard
+], renderDashboard);
 
-    app.get('/dashboard', isLoggedIn, (req, res) => {
-        res.render('dashboard');
-    });
+router.get('/', [
+    validarLogin
+], renderLogin);
 
-    app.get('/login', (req, res) => {
-        res.render('login');
-    });
+router.get('/logout', logout);
 
-    app.get('/logout', (req, res) => {
-        req.logout();
-        res.redirect('/login');
-    });
+router.post('/login', loggingIn);
 
-    app.post('/login', passport.authenticate('local', {
-        failureRedirect: '/login',
-        successRedirect: '/dashboard'
-    }));
-
-    passport.use(new LocalStrategy(
-        (username, password, done) => {
-            if(username === 'test@gmail.com' && password === '1234') {
-                return done(null, {username: 'test@gmail.com'});
-            } else {
-                return done(null, false);
-            }
-        }
-    ));
-
-    passport.serializeUser((user, done) => {
-        done(null, user.username);
-    });
-
-    passport.deserializeUser((username, done) => {
-        done(null, {username: username});
-    }); 
-
-    function isLoggedIn(req, res, next) {
-        if(req.isAuthenticated()) {
-            return next();
-        } else {
-            return res.redirect('/login');
-        }
-    }
-};
+module.exports = router;
